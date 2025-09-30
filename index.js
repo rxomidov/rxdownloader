@@ -1,3 +1,4 @@
+require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const {instagramGetUrl} = require("instagram-url-direct");
 const axios = require("axios");
@@ -12,6 +13,13 @@ bot.onText(/\/start/, (msg) => {
     msg.chat.id,
     "👋 Send me an Instagram post or reel link (public), and I'll download the video for you."
   );
+});
+
+// --- Fake web server so Render marks it "Live"
+const app = express();
+app.get("/", (req, res) => res.send("Bot is running..."));
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Web server running on port", process.env.PORT || 3000);
 });
 
 // Listen for any message
