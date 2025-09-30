@@ -34,7 +34,12 @@ bot.on("message", async (msg) => {
   bot.sendMessage(chatId, "⏳ Processing your link...");
 
   try {
-    const result = await instagramGetUrl(text);
+    const result = await instagramGetUrl(text, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
+    });
     if (!result.url_list || result.url_list.length === 0) {
       return bot.sendMessage(chatId, "⚠️ No video found at that link.");
     }
