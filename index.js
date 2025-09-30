@@ -45,6 +45,10 @@ bot.on("message", async (msg) => {
       console.error("videoUrl:", videoUrl);
       // Download video into buffer (optional, you can also send the link directly)
       const response = await axios.get(videoUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+          "Accept-Language": "en-US,en;q=0.9"
+        },
         responseType: "arraybuffer",
       });
       const buffer = Buffer.from(response.data, "binary");
