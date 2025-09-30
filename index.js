@@ -3,9 +3,7 @@ const {instagramGetUrl} = require("instagram-url-direct");
 const axios = require("axios");
 
 // 🔑 Put your token from BotFather here OR set in env
-const token =
-  process.env.TELEGRAM_TOKEN ||
-  "7668721421:AAGS4Hi0uGV2m14FJNXxm5Zc57o1TUgjwgs";
+const token = process.env.TOKEN
 
 const bot = new TelegramBot(token, { polling: true });
 
