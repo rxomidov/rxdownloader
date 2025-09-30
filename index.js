@@ -1,7 +1,7 @@
 require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const {instagramGetUrl} = require("instagram-url-direct");
-const express = require("express");
+// const express = require("express");
 const axios = require("axios");
 
 // 🔑 Put your token from BotFather here OR set in env
@@ -17,11 +17,11 @@ bot.onText(/\/start/, (msg) => {
 });
 
 // --- Fake web server so Render marks it "Live"
-const app = express();
-app.get("/", (req, res) => res.send("Bot is running..."));
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Web server running on port", process.env.PORT || 3000);
-});
+// const app = express();
+// app.get("/", (req, res) => res.send("Bot is running..."));
+// app.listen(process.env.PORT || 3000, () => {
+//   console.log("Web server running on port", process.env.PORT || 3000);
+// });
 
 // Listen for any message
 bot.on("message", async (msg) => {
