@@ -52,20 +52,26 @@ bot.on("message", async (msg) => {
     // Loop through all videos (carousel posts can have multiple)
     for (let i = 0; i < result.url_list.length; i++) {
       const videoUrl = result.url_list[i];
-      console.error("videoUrl:", videoUrl);
       // Download video into buffer (optional, you can also send the link directly)
-      const response = await axios.get(videoUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          "Accept-Language": "en-US,en;q=0.9"
-        },
-        responseType: "arraybuffer",
-      });
-      const buffer = Buffer.from(response.data, "binary");
+      try {
+        const response = await axios.get(videoUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://www.instagram.com/",
+          },
+          responseType: "arraybuffer",
+        });
+        const buffer = Buffer.from(response.data, "binary");
 
-      await bot.sendVideo(chatId, buffer, {
-        caption: `Link: ${text}\n🎥 From Instagram by @rxdownloaderbot`,
-      });
+        await bot.sendVideo(chatId, buffer, {
+          caption: `Link: ${text}\n🎥 From Instagram by @rxdownloaderbot`,
+        });
+      } catch (err) {
+        console.error("ErrorAxios:", err.message);
+      }   
     }
   } catch (err) {
     console.error("Error:", err.message);
