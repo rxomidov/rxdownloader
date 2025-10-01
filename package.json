@@ -14,7 +14,7 @@
     "axios": "^1.12.2",
     "dotenv": "^16.0.0",
     "express": "^5.1.0",
-    "fb-downloader-scrapper": "^1.0.1",
+    "fb-downloader-scrapper": "^3.0.1",
     "instagram-url-direct": "^2.0.7",
     "node-telegram-bot-api": "^0.66.0",
     "ytdl-core": "^4.11.5"

@@ -3,7 +3,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const { instagramGetUrl } = require("instagram-url-direct");
 // const express = require("express");
 const ytdl = require("ytdl-core");
-const fbDownloader = require("fb-downloader-scraper");
+const fbDownloader = require("fb-downloader-scrapper");
 const axios = require("axios");
 
 // 🔑 Put your token from BotFather here OR set in env
@@ -31,15 +31,15 @@ bot.on("message", async (msg) => {
   const url = msg.text;
 
   // skip if it's command
-  if (!url || text.startsWith("/")) return;
+  if (!url || url.startsWith("/")) return;
 
   try {
     if (url.includes("instagram.com")) {
       await handleInstagram(chatId, url);
-    } else if (text.includes("youtube.com/shorts") || text.includes("youtu.be")) {
-      await handleYouTube(chatId, text);
-    } else if (text.includes("facebook.com") || text.includes("fb.watch")) {
-      await handleFacebook(chatId, text);
+    } else if (url.includes("youtube.com/shorts") || url.includes("youtu.be")) {
+      await handleYouTube(chatId, url);
+    } else if (url.includes("facebook.com") || url.includes("fb.watch")) {
+      await handleFacebook(chatId, url);
     } else {
       await bot.sendMessage(chatId, "⚠️ Unsupported link. Send Instagram, YouTube Shorts, or Facebook video.");
     }
@@ -92,7 +92,7 @@ async function handleInstagram(chatId, url) {
       const buffer = Buffer.from(response.data, "binary");
 
       await bot.sendVideo(chatId, buffer, {
-        caption: `Link: ${text}\n🎥 From Instagram by @rxdownloaderbot`,
+        caption: `Link: ${url}\n🎥 From Instagram by @rxdownloaderbot`,
       });
     } catch (err) {
       console.error("ErrorAxios:", err.message);
