@@ -108,7 +108,8 @@ async function handleYouTube(chatId, url) {
   try {
     const yt = await Innertube.create();
     const info = await yt.getInfo(url);
-
+    console.log(info);
+    
     const stream = await info.download({ quality: '360p' });
 
     const chunks = [];
