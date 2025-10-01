@@ -114,16 +114,10 @@ async function handleYouTube(chatId, url) {
     const info = await ytdl.getInfo(url);
     const title = info.videoDetails.title;
 
-    // Pick a reasonable format (mp4 with audio)
-    const format = ytdl.chooseFormat(info.formats, {
-      quality: "lowest", // you can use "18" or "134" for specific itags
-      filter: "audioandvideo",
-    });
-
-    // Stream directly into buffer
+    // Stream video directly into memory
     const chunks = [];
     await new Promise((resolve, reject) => {
-      ytdl(url, { format })
+      ytdl(url, { quality: "18", filter: "audioandvideo" })
         .on("data", (chunk) => chunks.push(chunk))
         .on("end", resolve)
         .on("error", reject);
@@ -135,8 +129,8 @@ async function handleYouTube(chatId, url) {
       caption: `▶️ YouTube Shorts\n${title}\n${url}`,
     });
   } catch (err) {
-    console.error("YouTube error:", err);
-    bot.sendMessage(chatId, "❌ Failed to download YouTube video. Might be too long or unsupported.");
+    console.error("YouTube download error:", err);
+    await bot.sendMessage(chatId, "❌ Failed to download YouTube video. Maybe too long or unsupported.");
   }
 }
 
