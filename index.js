@@ -104,23 +104,40 @@ async function handleInstagram(chatId, url) {
 // YouTube Shorts
 //
 async function handleYouTube(chatId, url) {
-  bot.sendMessage(chatId, "📥 Downloading YouTube Shorts...");
-  if (!ytdl.validateURL(url)) {
-    return bot.sendMessage(chatId, "⚠️ Invalid YouTube link.");
+  try {
+    await bot.sendMessage(chatId, "📥 Downloading YouTube Shorts...");
+
+    if (!ytdl.validateURL(url)) {
+      return bot.sendMessage(chatId, "⚠️ Invalid YouTube link.");
+    }
+
+    const info = await ytdl.getInfo(url);
+    const title = info.videoDetails.title;
+
+    // Pick a reasonable format (mp4 with audio)
+    const format = ytdl.chooseFormat(info.formats, {
+      quality: "lowest", // you can use "18" or "134" for specific itags
+      filter: "audioandvideo",
+    });
+
+    // Stream directly into buffer
+    const chunks = [];
+    await new Promise((resolve, reject) => {
+      ytdl(url, { format })
+        .on("data", (chunk) => chunks.push(chunk))
+        .on("end", resolve)
+        .on("error", reject);
+    });
+
+    const buffer = Buffer.concat(chunks);
+
+    await bot.sendVideo(chatId, buffer, {
+      caption: `▶️ YouTube Shorts\n${title}\n${url}`,
+    });
+  } catch (err) {
+    console.error("YouTube error:", err);
+    bot.sendMessage(chatId, "❌ Failed to download YouTube video. Might be too long or unsupported.");
   }
-
-  const info = await ytdl.getInfo(url);
-  const title = info.videoDetails.title;
-
-  // choose lowest MP4 format under Telegram limits
-  const format = ytdl.chooseFormat(info.formats, { quality: "136", filter: "videoandaudio" });
-
-  const res = await axios.get(format.url, { responseType: "arraybuffer", timeout: 60000 });
-  const buffer = Buffer.from(res.data);
-
-  await bot.sendVideo(chatId, buffer, {
-    caption: `▶️ YouTube Shorts\n${title}\n${url}`,
-  });
 }
 
 //
