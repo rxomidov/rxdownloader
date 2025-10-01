@@ -12,7 +12,7 @@ const bot = new TelegramBot(token, { polling: true });
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(
     msg.chat.id,
-    "👋 Send me an Instagram post or reel link (public), and I'll download the video for you."
+    "👋 Salom, Instagramdan video (reels) link yuboring, videosini yuklab beraman."
   );
 });
 
@@ -31,7 +31,7 @@ bot.on("message", async (msg) => {
   // skip if it's command
   if (!text || text.startsWith("/")) return;
 
-  bot.sendMessage(chatId, "⏳ Processing your link...");
+  bot.sendMessage(chatId, "⏳ Havolangiz qayta ishlanmoqda...");
 
   try {
     const result = await instagramGetUrl(text, {
@@ -77,7 +77,7 @@ bot.on("message", async (msg) => {
     console.error("Error:", err.message);
     bot.sendMessage(
       chatId,
-      "❌ Failed to fetch video. Make sure the link is valid & public."
+      "❌ Videoni yuklashda xatolik yuz berdi. Linkni tog'ri va ochiq(public) ekanini tekshiring."
     );
   }
 });
