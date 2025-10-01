@@ -1,5 +1,5 @@
 const TelegramBot = require("node-telegram-bot-api");
-const ytdlp = require("yt-dlp-exec");
+const youtubedl = require("youtube-dl-exec");
 const fs = require("fs");
 
 const token = process.env.TOKEN;
@@ -31,7 +31,7 @@ async function handleDownload(chatId, url) {
     const filename = `video_${Date.now()}.mp4`;
 
     // Download with yt-dlp
-    await ytdlp(url, {
+    await youtubedl(url, {
       output: filename,
       format: "mp4[height<=480]" // keep file small for Telegram
     });
