@@ -2,8 +2,7 @@ require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const { instagramGetUrl } = require("instagram-url-direct");
 // const express = require("express");
-const { exec } = require("child_process");
-const fs = require("fs");
+const { Innertube } = require('youtubei.js');
 const ytdl = require("ytdl-core");
 const fbDownloader = require("fb-downloader-scrapper");
 const axios = require("axios");
@@ -107,21 +106,17 @@ async function handleInstagram(chatId, url) {
 //
 async function handleYouTube(chatId, url) {
   try {
-    await bot.sendMessage(chatId, "📥 Downloading YouTube Shorts...");
+    const yt = await Innertube.create();
+    const info = await yt.getInfo(url);
 
-    const output = `video_${Date.now()}.mp4`;
+    const stream = await info.download({ quality: '360p' });
 
-    await new Promise((resolve, reject) => {
-      exec(`yt-dlp -f mp4 -o "${output}" "${url}"`, (error) => {
-        if (error) reject(error);
-        else resolve();
-      });
-    });
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
 
-    const buffer = fs.readFileSync(output);
+    const buffer = Buffer.concat(chunks);
+
     await bot.sendVideo(chatId, buffer, { caption: `▶️ ${url}` });
-
-    fs.unlinkSync(output); // cleanup
   } catch (err) {
     console.error("YouTube error:", err);
     bot.sendMessage(chatId, "❌ Failed to download YouTube video.");
