@@ -1,49 +1,145 @@
+require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
-const youtubedl = require("youtube-dl-exec");
-const fs = require("fs");
+const { instagramGetUrl } = require("instagram-url-direct");
+// const express = require("express");
+const { Innertube } = require('youtubei.js');
+const ytdl = require("ytdl-core");
+const fbDownloader = require("fb-downloader-scrapper");
+const axios = require("axios");
 
+// 🔑 Put your token from BotFather here OR set in env
 const token = process.env.TOKEN;
+
 const bot = new TelegramBot(token, { polling: true });
 
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(
+    msg.chat.id,
+    "👋 Salom, Instagramdan video (reels) link yuboring, videosini yuklab beraman."
+  );
+});
+
+// --- Fake web server so Render marks it "Live"
+// const app = express();
+// app.get("/", (req, res) => res.send("Bot is running..."));
+// app.listen(process.env.PORT || 3000, () => {
+//   console.log("Web server running on port", process.env.PORT || 3000);
+// });
+
+// Listen for any message
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
-  const text = msg.text;
+  const url = msg.text;
 
-  if (!text) return;
+  // skip if it's command
+  if (!url || url.startsWith("/")) return;
 
-  if (
-    text.includes("youtube.com") ||
-    text.includes("youtu.be") ||
-    text.includes("facebook.com") ||
-    text.includes("fb.watch") ||
-    text.includes("instagram.com")
-  ) {
-    await handleDownload(chatId, text);
-  } else {
-    bot.sendMessage(chatId, "⚠️ Send me a YouTube, Facebook, or Instagram video link.");
+  try {
+    if (url.includes("instagram.com")) {
+      await handleInstagram(chatId, url);
+    } else if (url.includes("youtube.com/shorts") || url.includes("youtu.be")) {
+      await handleYouTube(chatId, url);
+    } else if (url.includes("facebook.com") || url.includes("fb.watch")) {
+      await handleFacebook(chatId, url);
+    } else {
+      await bot.sendMessage(chatId, "⚠️ Unsupported link. Send Instagram, YouTube Shorts, or Facebook video.");
+    }
+  } catch (err) {
+    console.error("Error:", err.message);
+    bot.sendMessage(
+      chatId,
+      "❌ Videoni yuklashda xatolik yuz berdi. Linkni tog'ri va ochiq(public) ekanini tekshiring."
+    );
   }
 });
 
-async function handleDownload(chatId, url) {
-  try {
-    await bot.sendMessage(chatId, "📥 Downloading video...");
+//
+// Instagram
+//
+async function handleInstagram(chatId, url) {
+  bot.sendMessage(chatId, "⏳ Instagram havolangiz qayta ishlanmoqda...");
 
-    const filename = `video_${Date.now()}.mp4`;
-
-    // Download with yt-dlp
-    await youtubedl(url, {
-      output: filename,
-      format: "mp4[height<=480]" // keep file small for Telegram
-    });
-
-    const buffer = fs.readFileSync(filename);
-
-    // Send video
-    await bot.sendVideo(chatId, buffer, { caption: `▶️ ${url}` });
-
-    fs.unlinkSync(filename); // cleanup
-  } catch (err) {
-    console.error("Download error:", err);
-    bot.sendMessage(chatId, "❌ Failed to download this video.");
+  const result = await instagramGetUrl(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/120.0.0.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      Referer: "https://www.instagram.com/",
+    },
+  });
+  if (!result.url_list || result.url_list.length === 0) {
+    return bot.sendMessage(chatId, "⚠️ No video found at that link.");
   }
+
+  // Loop through all videos (carousel posts can have multiple)
+  for (let i = 0; i < result.url_list.length; i++) {
+    const videoUrl = result.url_list[i];
+    // Download video into buffer (optional, you can also send the link directly)
+    try {
+      const response = await axios.get(videoUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Referer: "https://www.instagram.com/",
+        },
+        responseType: "arraybuffer",
+      });
+      const buffer = Buffer.from(response.data, "binary");
+
+      await bot.sendVideo(chatId, buffer, {
+        caption: `Link: ${url}\n🎥 From Instagram by @rxdownloaderbot`,
+      });
+    } catch (err) {
+      console.error("ErrorAxios:", err.message);
+    }
+  }
+}
+
+//
+// YouTube Shorts
+//
+async function handleYouTube(chatId, url) {
+  try {
+    const yt = await Innertube.create();
+    const info = await yt.getInfo(url);
+    console.log(info);
+    
+    const stream = await info.download({ quality: '360p' });
+
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+
+    const buffer = Buffer.concat(chunks);
+
+    await bot.sendVideo(chatId, buffer, { caption: `▶️ ${url}` });
+  } catch (err) {
+    console.error("YouTube error:", err);
+    bot.sendMessage(chatId, "❌ Failed to download YouTube video.");
+  }
+}
+
+//
+// Facebook
+//
+async function handleFacebook(chatId, url) {
+  bot.sendMessage(chatId, "📥 Downloading Facebook video...");
+  const result = await fbDownloader(url);
+  if (!result || !result.sd || !result.sd[0] || !result.sd[0].url) {
+    return bot.sendMessage(chatId, "⚠️ Could not fetch video.");
+  }
+
+  // use SD version (smaller), HD also available at result.hd
+  const videoUrl = result.sd[0].url;
+  const res = await axios.get(videoUrl, { responseType: "arraybuffer", timeout: 60000 });
+  const buffer = Buffer.from(res.data);
+
+  await bot.sendVideo(chatId, buffer, {
+    caption: `📘 Facebook Video\n${url}`,
+  });
 }
