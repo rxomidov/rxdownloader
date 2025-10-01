@@ -2,6 +2,8 @@ require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const { instagramGetUrl } = require("instagram-url-direct");
 // const express = require("express");
+const { exec } = require("child_process");
+const fs = require("fs");
 const ytdl = require("ytdl-core");
 const fbDownloader = require("fb-downloader-scrapper");
 const axios = require("axios");
@@ -107,43 +109,22 @@ async function handleYouTube(chatId, url) {
   try {
     await bot.sendMessage(chatId, "📥 Downloading YouTube Shorts...");
 
-    if (!ytdl.validateURL(url)) {
-      return bot.sendMessage(chatId, "⚠️ Invalid YouTube link.");
-    }
+    const output = `video_${Date.now()}.mp4`;
 
-    const info = await ytdl.getInfo(url);
-    const title = info.videoDetails.title;
-
-    // Stream video directly into memory
-    const chunks = [];
     await new Promise((resolve, reject) => {
-      ytdl(url, { 
-        requestOptions: {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9",
-            Accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            Referer: "https://www.youtube.com/",
-          },
-        },
-        quality: "18", 
-        filter: "audioandvideo"
-      })
-        .on("data", (chunk) => chunks.push(chunk))
-        .on("end", resolve)
-        .on("error", reject);
+      exec(`yt-dlp -f mp4 -o "${output}" "${url}"`, (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
     });
 
-    const buffer = Buffer.concat(chunks);
+    const buffer = fs.readFileSync(output);
+    await bot.sendVideo(chatId, buffer, { caption: `▶️ ${url}` });
 
-    await bot.sendVideo(chatId, buffer, {
-      caption: `▶️ YouTube Shorts\n${title}\n${url}`,
-    });
+    fs.unlinkSync(output); // cleanup
   } catch (err) {
-    console.error("YouTube download error:", err);
-    await bot.sendMessage(chatId, "❌ Failed to download YouTube video. Maybe too long or unsupported.");
+    console.error("YouTube error:", err);
+    bot.sendMessage(chatId, "❌ Failed to download YouTube video.");
   }
 }
 
